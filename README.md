@@ -122,53 +122,6 @@ source ~/.profile
 gpu-rgb
 ```
 
-## Install From A Release Archive Instead
-
-Use this method if you do not want to use Git.
-
-### 1. Install the required package
-
-CachyOS / Arch Linux:
-
-```bash
-sudo pacman -S i2c-tools
-```
-
-### 2. Download the release archive
-
-Download either the `.tar.gz` or `.zip` file from the GitHub Releases page:
-
-```text
-https://github.com/VirulentArc/asrock-rx9070xt-rgb/releases
-```
-
-### 3. Extract the archive
-
-For the `.tar.gz` release:
-
-```bash
-cd ~/Downloads
-tar -xzf asrock-rx9070xt-rgb-v0.1.0.tar.gz
-cd asrock-rx9070xt-rgb
-```
-
-For the `.zip` release:
-
-```bash
-cd ~/Downloads
-unzip asrock-rx9070xt-rgb-v0.1.0.zip
-cd asrock-rx9070xt-rgb
-```
-
-### 4. Continue with the normal setup
-
-Follow the steps above starting at:
-
-```text
-Load the I2C device module
-```
-
-Then run the installer and start `gpu-rgb`.
 
 ## Other Linux Distros
 
