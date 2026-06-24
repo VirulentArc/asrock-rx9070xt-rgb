@@ -1,0 +1,530 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+VERSION="0.1.0"
+APP_NAME="ASRock RX 9070 XT RGB Controller"
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+RGB_SCRIPT="${GPU_RGB_APPLY:-$SCRIPT_DIR/asrock-gpu-rgb-apply}"
+
+# Menu defaults. The low-level writer also accepts GPU_RGB_BUS/GPU_RGB_ADDR overrides.
+DEFAULT_ALL_CHANNELS="${GPU_RGB_ALL_CHANNELS:-3 6 7}"
+DEFAULT_BODY_CHANNELS="${GPU_RGB_BODY_CHANNELS:-6 7}"
+DEFAULT_TOP_CHANNEL="${GPU_RGB_TOP_CHANNEL:-6}"
+DEFAULT_FAN_CHANNEL="${GPU_RGB_FAN_CHANNEL:-7}"
+DEFAULT_HEADER_CHANNEL="${GPU_RGB_HEADER_CHANNEL:-3}"
+
+C_RESET="$(printf "\033[0m")"
+C_BOLD="$(printf "\033[1m")"
+C_DIM="$(printf "\033[2m")"
+C_CYAN="$(printf "\033[36m")"
+C_GREEN="$(printf "\033[32m")"
+C_YELLOW="$(printf "\033[33m")"
+C_MAGENTA="$(printf "\033[35m")"
+C_WHITE="$(printf "\033[37m")"
+
+BOX_WIDTH=75
+BORDER_WIDTH=77
+
+usage() {
+    cat <<USAGE
+${APP_NAME} v${VERSION}
+
+Interactive Linux RGB menu for the ASRock RX 9070 XT Steel Legend GPU.
+This wraps the low-level asrock-gpu-rgb-apply writer and uses known-safe modes.
+
+Usage:
+  gpu-rgb
+
+Options:
+  -h, --help       Show this help text
+  -V, --version    Show version
+
+Environment overrides:
+  GPU_RGB_APPLY=/path/to/asrock-gpu-rgb-apply
+  GPU_RGB_BUS=7
+  GPU_RGB_ADDR=0x36
+  GPU_RGB_ALL_CHANNELS='3 6 7'
+  GPU_RGB_BODY_CHANNELS='6 7'
+  GPU_RGB_TOP_CHANNEL=6
+  GPU_RGB_FAN_CHANNEL=7
+  GPU_RGB_HEADER_CHANNEL=3
+  GPU_RGB_SKIP_WARNING=1
+
+Known channels on the tested card:
+  3 = GPU ARGB header
+  6 = top side/logo lighting
+  7 = fan lighting
+
+Safety:
+  This has only been tested on the ASRock RX 9070 XT Steel Legend.
+  Do not use unknown I2C addresses, unknown channels, or mode values 0x10+.
+USAGE
+}
+
+case "${1:-}" in
+    -h|--help)
+        usage
+        exit 0
+        ;;
+    -V|--version)
+        echo "${VERSION}"
+        exit 0
+        ;;
+esac
+
+resolve_rgb_script() {
+    if [[ -x "$RGB_SCRIPT" ]]; then
+        return 0
+    fi
+
+    if command -v asrock-gpu-rgb-apply >/dev/null 2>&1; then
+        RGB_SCRIPT="$(command -v asrock-gpu-rgb-apply)"
+        return 0
+    fi
+
+    echo "Missing executable RGB writer." >&2
+    echo "Expected: $RGB_SCRIPT" >&2
+    echo "Install with ./install.sh or set GPU_RGB_APPLY=/path/to/asrock-gpu-rgb-apply" >&2
+    exit 1
+}
+
+show_first_run_warning() {
+    if [[ "${GPU_RGB_SKIP_WARNING:-0}" == "1" ]]; then
+        return 0
+    fi
+
+    local state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/asrock-rx9070xt-rgb"
+    local ack_file="$state_dir/warning-acknowledged"
+
+    if [[ -f "$ack_file" ]]; then
+        return 0
+    fi
+
+    clear
+    cat <<WARNING
+${APP_NAME}
+
+Hardware warning:
+  This tool writes directly to the GPU RGB controller over I2C.
+  It has only been tested on the ASRock RX 9070 XT Steel Legend.
+  Do not use it on other GPUs unless you know the correct bus, address, channels, and mode values.
+
+Known safety note:
+  Mode values 0x10 and higher could wedge the RGB controller during testing.
+  The menu does not use those values.
+
+Press Enter To Continue...
+WARNING
+    read -r
+    mkdir -p "$state_dir"
+    : > "$ack_file"
+}
+
+ui_line() {
+    local left="$1"
+    local fill="$2"
+    local right="$3"
+
+    printf "%s%s" "$C_CYAN" "$left"
+    for ((i=0; i<BORDER_WIDTH; i++)); do
+        printf "%s" "$fill"
+    done
+    printf "%s%s\n" "$right" "$C_RESET"
+}
+
+ui_top() {
+    ui_line "╭" "─" "╮"
+}
+
+ui_mid() {
+    ui_line "├" "─" "┤"
+}
+
+ui_bottom() {
+    ui_line "╰" "─" "╯"
+}
+
+ui_row() {
+    local text="$1"
+    local color="${2:-$C_WHITE}"
+
+    printf "%s│%s %s%-${BOX_WIDTH}s%s %s│%s\n" \
+        "$C_CYAN" "$C_RESET" "$color" "$text" "$C_RESET" "$C_CYAN" "$C_RESET"
+}
+
+ui_blank() {
+    ui_row ""
+}
+
+draw_main_menu() {
+    clear
+
+    ui_top
+    ui_row "$APP_NAME" "$C_BOLD$C_CYAN"
+    ui_mid
+
+    ui_row "Static" "$C_BOLD$C_GREEN"
+    ui_row "  1)  Static Color" "$C_WHITE"
+    ui_blank
+
+    ui_row "Hardware Animation Modes" "$C_BOLD$C_MAGENTA"
+    ui_row "  2)  Breathing" "$C_WHITE"
+    ui_row "  3)  Strobe" "$C_WHITE"
+    ui_row "  4)  RGB Cycle" "$C_WHITE"
+    ui_row "  5)  Random" "$C_WHITE"
+    ui_row "  6)  Color Shift / Fade" "$C_WHITE"
+    ui_row "  7)  Visor / Back-And-Forth (Possibly Broken, Goes Black After Each Cycle)" "$C_YELLOW"
+    ui_row "  8)  Stacking Light, Right To Left" "$C_WHITE"
+    ui_row "  9)  Fill Wave, Left To Right" "$C_WHITE"
+    ui_row " 10)  Traveling Wave, Left To Right" "$C_WHITE"
+    ui_row " 11)  Marquee - Color Choice" "$C_WHITE"
+    ui_row " 12)  Marquee - Random Color Shift" "$C_WHITE"
+    ui_row " 13)  Color Wave" "$C_WHITE"
+    ui_row " 14)  Rainbow" "$C_WHITE"
+    ui_blank
+
+    ui_row "Info" "$C_BOLD$C_GREEN"
+    ui_row " 15)  Hardware Info" "$C_WHITE"
+    ui_blank
+
+    ui_row "Controls" "$C_BOLD$C_GREEN"
+    ui_row "  0)  Quit" "$C_WHITE"
+    ui_mid
+    ui_row "Tip: Hardware Modes Keep Running After This Window Closes." "$C_DIM"
+    ui_bottom
+
+    printf "\n%sChoose option [0-15]: %s" "$C_BOLD$C_CYAN" "$C_RESET"
+}
+
+choose_color() {
+    echo
+    echo "Color:"
+    echo "1) Off / Black"
+    echo "2) White"
+    echo "3) Cool Blue"
+    echo "4) Cyan"
+    echo "5) Purple"
+    echo "6) Red"
+    echo "7) Green"
+    echo "8) Amber"
+    echo "9) Custom Hex"
+    echo
+
+    read -r -p "Choose Color [1-9, default 3]: " color_choice
+    color_choice="${color_choice:-3}"
+
+    case "$color_choice" in
+        1) COLOR="off" ;;
+        2) COLOR="#FFFFFF" ;;
+        3) COLOR="#00A0FF" ;;
+        4) COLOR="#00FFFF" ;;
+        5) COLOR="#A000FF" ;;
+        6) COLOR="#FF0000" ;;
+        7) COLOR="#00FF00" ;;
+        8) COLOR="#FF8000" ;;
+        9)
+            read -r -p "Enter Hex Color, like #00A0FF: " COLOR
+            ;;
+        *)
+            echo "Invalid color choice."
+            return 1
+            ;;
+    esac
+}
+
+choose_zones() {
+    echo
+    echo "Zones:"
+    echo "1) All Zones, Including GPU ARGB Header"
+    echo "2) GPU Body Only, Top + Fan"
+    echo "3) Top Side Only"
+    echo "4) Fan Only"
+    echo "5) ARGB Header Only"
+    echo
+
+    read -r -p "Choose Zone [1-5, default 1]: " zone_choice
+    zone_choice="${zone_choice:-1}"
+
+    case "$zone_choice" in
+        1) CHANNELS="$DEFAULT_ALL_CHANNELS" ;;
+        2) CHANNELS="$DEFAULT_BODY_CHANNELS" ;;
+        3) CHANNELS="$DEFAULT_TOP_CHANNEL" ;;
+        4) CHANNELS="$DEFAULT_FAN_CHANNEL" ;;
+        5) CHANNELS="$DEFAULT_HEADER_CHANNEL" ;;
+        *)
+            echo "Invalid zone choice."
+            return 1
+            ;;
+    esac
+}
+
+choose_speed() {
+    echo
+    echo "Speed:"
+    echo "1) Slowest"
+    echo "2) Slow"
+    echo "3) Medium"
+    echo "4) Fast"
+    echo "5) Fastest"
+    echo
+
+    read -r -p "Choose Speed [1-5, default 3]: " speed_choice
+    speed_choice="${speed_choice:-3}"
+
+    case "$speed_choice" in
+        1) SPEED_PARAM="0xFF" ;;
+        2) SPEED_PARAM="0xC0" ;;
+        3) SPEED_PARAM="0x80" ;;
+        4) SPEED_PARAM="0x40" ;;
+        5) SPEED_PARAM="0x20" ;;
+        *)
+            echo "Invalid speed choice."
+            return 1
+            ;;
+    esac
+}
+
+choose_rgb_cycle_speed() {
+    echo
+    echo "RGB Cycle Speed:"
+    echo "1) Slowest"
+    echo "2) Slow"
+    echo "3) Medium"
+    echo "4) Fast"
+    echo "5) Fastest"
+    echo
+    echo "RGB Cycle Uses A Custom Speed Table Because The Normal Slowest Value Can Skip Red."
+    echo
+
+    read -r -p "Choose Speed [1-5, default 3]: " speed_choice
+    speed_choice="${speed_choice:-3}"
+
+    case "$speed_choice" in
+        1) SPEED_PARAM="0xE0" ;;
+        2) SPEED_PARAM="0xC0" ;;
+        3) SPEED_PARAM="0x80" ;;
+        4) SPEED_PARAM="0x40" ;;
+        5) SPEED_PARAM="0x20" ;;
+        *)
+            echo "Invalid speed choice."
+            return 1
+            ;;
+    esac
+}
+
+choose_brightness() {
+    echo
+    echo "Brightness:"
+    echo "1) Dimmest"
+    echo "2) Dim"
+    echo "3) Medium"
+    echo "4) Bright"
+    echo "5) Brightest"
+    echo
+
+    read -r -p "Choose Brightness [1-5, default 3]: " brightness_choice
+    brightness_choice="${brightness_choice:-3}"
+
+    case "$brightness_choice" in
+        1) BRIGHTNESS_PARAM="0x20" ;;
+        2) BRIGHTNESS_PARAM="0x40" ;;
+        3) BRIGHTNESS_PARAM="0x80" ;;
+        4) BRIGHTNESS_PARAM="0xC0" ;;
+        5) BRIGHTNESS_PARAM="0xFF" ;;
+        *)
+            echo "Invalid brightness choice."
+            return 1
+            ;;
+    esac
+}
+
+is_off_color() {
+    local lower="${COLOR,,}"
+    local hex="${COLOR#\#}"
+
+    [[ "$lower" == "off" || "$lower" == "black" || "${hex^^}" == "000000" ]]
+}
+
+apply_rgb() {
+    echo
+    echo "Applying:"
+    echo "  Label:      $LABEL"
+    echo "  Color:      $COLOR"
+    echo "  Channels:   $CHANNELS"
+    echo "  Speed:      $SPEED_PARAM"
+    echo "  Brightness: $BRIGHTNESS_PARAM"
+    echo
+
+    env GPU_RGB_CHANNELS="$CHANNELS" \
+        GPU_RGB_MODE="$MODE" \
+        GPU_RGB_PARAM_A="$SPEED_PARAM" \
+        GPU_RGB_PARAM_B="$BRIGHTNESS_PARAM" \
+        GPU_RGB_PARAM_C="$PARAM_C" \
+        "$RGB_SCRIPT" "$COLOR"
+}
+
+run_static() {
+    LABEL="Static Color"
+    MODE="0x01"
+    SPEED_PARAM="0x80"
+    BRIGHTNESS_PARAM="0x80"
+    PARAM_C="0x00"
+
+    choose_color || return
+    choose_zones || return
+
+    if ! is_off_color; then
+        choose_brightness || return
+    fi
+
+    apply_rgb
+}
+
+run_color_mode() {
+    LABEL="$1"
+    MODE="$2"
+    COLOR="#00A0FF"
+    SPEED_PARAM="0x80"
+    BRIGHTNESS_PARAM="0x80"
+    PARAM_C="0x01"
+
+    choose_color || return
+    choose_zones || return
+    choose_speed || return
+    choose_brightness || return
+    apply_rgb
+}
+
+run_no_color_mode() {
+    LABEL="$1"
+    MODE="$2"
+    COLOR="#FFFFFF"
+    SPEED_PARAM="0x80"
+    BRIGHTNESS_PARAM="0x80"
+    PARAM_C="0x01"
+
+    choose_zones || return
+    choose_speed || return
+    choose_brightness || return
+    apply_rgb
+}
+
+run_rgb_cycle() {
+    LABEL="RGB Cycle"
+    MODE="0x04"
+    COLOR="#FFFFFF"
+    SPEED_PARAM="0x80"
+    BRIGHTNESS_PARAM="0x80"
+    PARAM_C="0x01"
+
+    choose_zones || return
+    choose_rgb_cycle_speed || return
+    choose_brightness || return
+    apply_rgb
+}
+
+show_hardware_info() {
+    clear
+    cat <<INFO
+${APP_NAME} v${VERSION}
+
+Tested hardware:
+  GPU:          ASRock RX 9070 XT Steel Legend
+  I2C bus:      ${GPU_RGB_BUS:-7}
+  I2C address:  ${GPU_RGB_ADDR:-0x36}
+
+Known channels:
+  ${DEFAULT_HEADER_CHANNEL} = GPU ARGB Header
+  ${DEFAULT_TOP_CHANNEL} = Top Side / Logo Lighting
+  ${DEFAULT_FAN_CHANNEL} = Fan Lighting
+
+Known menu modes:
+  0x01 = Static Color
+  0x02 = Breathing
+  0x03 = Strobe
+  0x04 = RGB Cycle
+  0x05 = Random
+  0x06 = Not used; likely software-driven music mode
+  0x07 = Color Shift / Fade
+  0x08 = Visor / Back-And-Forth; may go black after each cycle
+  0x09 = Stacking Light, Right To Left
+  0x0A = Fill Wave, Left To Right
+  0x0B = Traveling Wave, Left To Right
+  0x0C = Marquee - Color Choice
+  0x0D = Marquee - Random Color Shift
+  0x0E = Color Wave
+  0x0F = Rainbow
+
+Safety:
+  Do not test 0x10 or higher. In testing, those values could wedge the RGB controller
+  until a cold power cycle.
+INFO
+}
+
+resolve_rgb_script
+show_first_run_warning
+
+while true; do
+    draw_main_menu
+    read -r choice
+
+    case "$choice" in
+        1)
+            run_static
+            ;;
+        2)
+            run_color_mode "Breathing" "0x02"
+            ;;
+        3)
+            run_color_mode "Strobe" "0x03"
+            ;;
+        4)
+            run_rgb_cycle
+            ;;
+        5)
+            run_no_color_mode "Random" "0x05"
+            ;;
+        6)
+            run_no_color_mode "Color Shift / Fade" "0x07"
+            ;;
+        7)
+            run_color_mode "Visor / Back-And-Forth (Possibly Broken, Goes Black After Each Cycle)" "0x08"
+            ;;
+        8)
+            run_color_mode "Stacking Light, Right To Left" "0x09"
+            ;;
+        9)
+            run_color_mode "Fill Wave, Left To Right" "0x0A"
+            ;;
+        10)
+            run_color_mode "Traveling Wave, Left To Right" "0x0B"
+            ;;
+        11)
+            run_color_mode "Marquee - Color Choice" "0x0C"
+            ;;
+        12)
+            run_no_color_mode "Marquee - Random Color Shift" "0x0D"
+            ;;
+        13)
+            run_no_color_mode "Color Wave" "0x0E"
+            ;;
+        14)
+            run_no_color_mode "Rainbow" "0x0F"
+            ;;
+        15)
+            show_hardware_info
+            ;;
+        0|q|Q)
+            echo "Done."
+            exit 0
+            ;;
+        *)
+            echo "Invalid choice."
+            ;;
+    esac
+
+    echo
+    printf "%sPress Enter To Return To The Menu...%s" "$C_DIM" "$C_RESET"
+    read -r
+done

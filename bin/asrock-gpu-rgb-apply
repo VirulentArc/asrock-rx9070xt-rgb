@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+VERSION="0.1.0"
+
+# Known-good defaults for the ASRock RX 9070 XT Steel Legend tested system.
+# These can be overridden with either the GPU_RGB_* names or the shorter legacy names.
+BUS="${GPU_RGB_BUS:-${BUS:-7}}"
+ADDR="${GPU_RGB_ADDR:-${ADDR:-0x36}}"
+CHANNELS="${GPU_RGB_CHANNELS:-${CHANNELS:-3 6 7}}"
+
+MODE="${GPU_RGB_MODE:-${MODE:-0x01}}"
+BRIGHTNESS="${GPU_RGB_PARAM_A:-${BRIGHTNESS:-0x80}}"  # Param A: animation speed on this controller.
+SPEED="${GPU_RGB_PARAM_B:-${SPEED:-0xFF}}"            # Param B: brightness on this controller.
+DIRECTION="${GPU_RGB_PARAM_C:-${DIRECTION:-0x00}}"
+
+usage() {
+    cat <<USAGE
+ASRock GPU RGB Apply v${VERSION}
+
+Low-level RGB writer for the ASRock RX 9070 XT Steel Legend RGB controller.
+This writes directly to the GPU RGB controller over I2C.
+
+Usage:
+  asrock-gpu-rgb-apply '#RRGGBB'
+  asrock-gpu-rgb-apply RRGGBB
+  asrock-gpu-rgb-apply off
+
+Options:
+  -h, --help       Show this help text
+  -V, --version    Show version
+
+Default hardware values:
+  Bus:       ${BUS}
+  Address:   ${ADDR}
+  Channels:  ${CHANNELS}
+
+Optional environment variables:
+  GPU_RGB_BUS=7
+  GPU_RGB_ADDR=0x36
+  GPU_RGB_CHANNELS='6 7'
+  GPU_RGB_MODE=0x01
+  GPU_RGB_PARAM_A=0x80
+  GPU_RGB_PARAM_B=0xFF
+  GPU_RGB_PARAM_C=0x00
+
+Legacy environment variable names are also accepted:
+  BUS, ADDR, CHANNELS, MODE, BRIGHTNESS, SPEED, DIRECTION
+
+Examples:
+  asrock-gpu-rgb-apply '#00A0FF'
+  env GPU_RGB_CHANNELS='6 7' GPU_RGB_MODE=0x03 asrock-gpu-rgb-apply '#00A0FF'
+  env GPU_RGB_MODE=0x04 GPU_RGB_PARAM_A=0x80 GPU_RGB_PARAM_B=0xC0 asrock-gpu-rgb-apply '#FFFFFF'
+
+Safety:
+  This has only been tested on the ASRock RX 9070 XT Steel Legend.
+  Do not use unknown modes or unknown I2C addresses.
+  In testing, mode values 0x10 and higher could wedge the RGB controller until a cold power cycle.
+USAGE
+}
+
+case "${1:-}" in
+    -h|--help)
+        usage
+        exit 0
+        ;;
+    -V|--version)
+        echo "${VERSION}"
+        exit 0
+        ;;
+esac
+
+if [[ $# -ne 1 ]]; then
+    usage
+    exit 1
+fi
+
+if ! command -v i2ctransfer >/dev/null 2>&1; then
+    echo "Error: i2ctransfer was not found. Install i2c-tools first." >&2
+    exit 1
+fi
+
+COLOR="$1"
+
+if [[ "${COLOR,,}" == "off" || "${COLOR,,}" == "black" ]]; then
+    HEX="000000"
+else
+    HEX="${COLOR#\#}"
+fi
+
+if [[ ! "$HEX" =~ ^[0-9a-fA-F]{6}$ ]]; then
+    echo "Invalid color: $COLOR" >&2
+    usage
+    exit 1
+fi
+
+R="0x${HEX:0:2}"
+G="0x${HEX:2:2}"
+B="0x${HEX:4:2}"
+
+for CH in $CHANNELS; do
+    if [[ ! "$CH" =~ ^[0-9]+$ ]]; then
+        echo "Invalid channel: $CH" >&2
+        exit 1
+    fi
+
+    CH_HEX="$(printf '0x%02X' "$CH")"
+
+    echo "Setting channel $CH on bus $BUS addr $ADDR to #${HEX^^}, mode $MODE"
+
+    i2ctransfer -y "$BUS" "w12@${ADDR}" \
+        0x10 0x00 "$CH_HEX" \
+        "$MODE" "$R" "$G" "$B" \
+        "$BRIGHTNESS" "$SPEED" "$DIRECTION" 0x1A 0x00
+
+    sleep 0.05
+done
