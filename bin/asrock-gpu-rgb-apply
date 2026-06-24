@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="0.1.0"
+VERSION="0.1.1"
 
 # Known-good defaults for the ASRock RX 9070 XT Steel Legend tested system.
 # These can be overridden with either the GPU_RGB_* names or the shorter legacy names.
@@ -10,9 +10,9 @@ ADDR="${GPU_RGB_ADDR:-${ADDR:-0x36}}"
 CHANNELS="${GPU_RGB_CHANNELS:-${CHANNELS:-3 6 7}}"
 
 MODE="${GPU_RGB_MODE:-${MODE:-0x01}}"
-BRIGHTNESS="${GPU_RGB_PARAM_A:-${BRIGHTNESS:-0x80}}"  # Param A: animation speed on this controller.
-SPEED="${GPU_RGB_PARAM_B:-${SPEED:-0xFF}}"            # Param B: brightness on this controller.
-DIRECTION="${GPU_RGB_PARAM_C:-${DIRECTION:-0x00}}"
+PARAM_A="${GPU_RGB_PARAM_A:-${SPEED:-0x80}}"        # Param A: animation speed on this controller.
+PARAM_B="${GPU_RGB_PARAM_B:-${BRIGHTNESS:-0xFF}}"   # Param B: brightness on this controller.
+PARAM_C="${GPU_RGB_PARAM_C:-${DIRECTION:-0x00}}"
 
 usage() {
     cat <<USAGE
@@ -31,9 +31,9 @@ Options:
   -V, --version    Show version
 
 Default hardware values:
-  Bus:       ${BUS}
-  Address:   ${ADDR}
-  Channels:  ${CHANNELS}
+  Bus:      ${BUS}
+  Address:  ${ADDR}
+  Channels: ${CHANNELS}
 
 Optional environment variables:
   GPU_RGB_BUS=7
@@ -111,7 +111,7 @@ for CH in $CHANNELS; do
     i2ctransfer -y "$BUS" "w12@${ADDR}" \
         0x10 0x00 "$CH_HEX" \
         "$MODE" "$R" "$G" "$B" \
-        "$BRIGHTNESS" "$SPEED" "$DIRECTION" 0x1A 0x00
+        "$PARAM_A" "$PARAM_B" "$PARAM_C" 0x1A 0x00
 
     sleep 0.05
 done

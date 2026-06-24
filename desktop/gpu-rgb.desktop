@@ -2,7 +2,7 @@
 Type=Application
 Name=GPU RGB
 Comment=Set ASRock RX 9070 XT RGB color
-Exec=alacritty -e gpu-rgb
+Exec=sh -lc "$HOME/.local/bin/gpu-rgb"
 Icon=preferences-desktop-color
-Terminal=false
+Terminal=true
 Categories=Utility;
