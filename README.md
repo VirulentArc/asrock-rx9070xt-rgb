@@ -4,12 +4,19 @@
 
 A small Linux RGB control tool for the **ASRock RX 9070 XT Steel Legend** GPU.
 
-It gives you a terminal menu called `gpu-rgb` and a lower-level command called `asrock-gpu-rgb-apply`. The scripts talk directly to the GPU RGB controller over I2C.
+It provides:
+
+- `gpu-rgb` — an interactive terminal menu
+- `asrock-gpu-rgb-apply` — the lower-level command used by the menu
+
+The tool talks directly to the GPU RGB controller over I2C.
 
 > [!WARNING]
-> This tool has only been tested on the **ASRock RX 9070 XT Steel Legend**. Do not use it on another GPU unless you know the correct I2C bus, address, channel numbers, and mode values.
+> This tool has only been tested on the **ASRock RX 9070 XT Steel Legend**.
+> Do not use it on another GPU unless you know the correct I2C bus, address, channel numbers, and mode values.
 >
-> During testing, mode values `0x10` and higher could wedge the RGB controller until a cold power cycle. This tool does not use those values.
+> During testing, mode values `0x10` and higher could wedge the RGB controller until a cold power cycle.
+> This tool does **not** use those values.
 
 ## Current Status
 
@@ -35,7 +42,7 @@ The installer copies two commands into `~/.local/bin`:
 | `gpu-rgb` | Opens the interactive RGB menu. |
 | `asrock-gpu-rgb-apply` | Low-level RGB writer used by the menu. |
 
-It also installs a desktop launcher named **GPU RGB** into:
+The installer can also create a desktop launcher named **GPU RGB** at:
 
 ```text
 ~/.local/share/applications/gpu-rgb.desktop
@@ -43,7 +50,7 @@ It also installs a desktop launcher named **GPU RGB** into:
 
 ## Quick Install: CachyOS / Arch Linux
 
-These are the easiest instructions if you are on CachyOS, Arch, or an Arch-based distro.
+These instructions are for CachyOS, Arch Linux, and Arch-based distros.
 
 ### 1. Install the required package
 
@@ -160,7 +167,7 @@ openSUSE:
 sudo zypper install i2c-tools
 ```
 
-Then follow the same steps from the Arch section starting at **Load the I2C device module**.
+Then follow the same setup steps from the Arch section starting at **Load the I2C device module**.
 
 ## Usage
 
