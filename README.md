@@ -48,23 +48,32 @@ The installer can also create a desktop launcher named **GPU RGB** at:
 ~/.local/share/applications/gpu-rgb.desktop
 ```
 
-## Quick Install: CachyOS / Arch Linux
+## Quick Install: Git Clone
 
-These instructions are for CachyOS, Arch Linux, and Arch-based distros.
+This is the recommended install method.
 
-### 1. Install the required package
+These commands assume you are using CachyOS, Arch Linux, or another Arch-based distro.
+
+### 1. Install the required packages
 
 ```bash
-sudo pacman -S i2c-tools
+sudo pacman -S git i2c-tools
 ```
 
-### 2. Load the I2C device module
+### 2. Download the project from GitHub
+
+```bash
+git clone https://github.com/VirulentArc/asrock-rx9070xt-rgb.git
+cd asrock-rx9070xt-rgb
+```
+
+### 3. Load the I2C device module
 
 ```bash
 sudo modprobe i2c-dev
 ```
 
-### 3. Allow your user to access I2C devices
+### 4. Allow your user to access I2C devices
 
 ```bash
 sudo groupadd -f i2c
@@ -84,27 +93,9 @@ groups
 
 You should see `i2c` somewhere in the output.
 
-### 4. Download and extract the release
-
-Download either the `.tar.gz` or `.zip` file from the GitHub Releases page.
-
-For the `.tar.gz` release:
-
-```bash
-cd ~/Downloads
-tar -xzf asrock-rx9070xt-rgb-v0.1.0.tar.gz
-cd asrock-rx9070xt-rgb
-```
-
-For the `.zip` release:
-
-```bash
-cd ~/Downloads
-unzip asrock-rx9070xt-rgb-v0.1.0.zip
-cd asrock-rx9070xt-rgb
-```
-
 ### 5. Run the installer
+
+From inside the project folder:
 
 ```bash
 ./install.sh
@@ -131,43 +122,106 @@ source ~/.profile
 gpu-rgb
 ```
 
-## Install From Git Instead
+## Install From A Release Archive Instead
 
-Use this if you want to clone the repository instead of downloading a release archive.
+Use this method if you do not want to use Git.
+
+### 1. Install the required package
+
+CachyOS / Arch Linux:
 
 ```bash
-git clone https://github.com/VirulentArc/asrock-rx9070xt-rgb.git
-cd asrock-rx9070xt-rgb
-./install.sh
+sudo pacman -S i2c-tools
 ```
 
-Replace `VirulentArc` with the account that owns the repository.
+### 2. Download the release archive
 
-If `gpu-rgb` is not found after installing, make sure `~/.local/bin` is in your PATH as shown above.
+Download either the `.tar.gz` or `.zip` file from the GitHub Releases page:
+
+```text
+https://github.com/VirulentArc/asrock-rx9070xt-rgb/releases
+```
+
+### 3. Extract the archive
+
+For the `.tar.gz` release:
+
+```bash
+cd ~/Downloads
+tar -xzf asrock-rx9070xt-rgb-v0.1.0.tar.gz
+cd asrock-rx9070xt-rgb
+```
+
+For the `.zip` release:
+
+```bash
+cd ~/Downloads
+unzip asrock-rx9070xt-rgb-v0.1.0.zip
+cd asrock-rx9070xt-rgb
+```
+
+### 4. Continue with the normal setup
+
+Follow the steps above starting at:
+
+```text
+Load the I2C device module
+```
+
+Then run the installer and start `gpu-rgb`.
 
 ## Other Linux Distros
 
-Install `i2c-tools` using your distro package manager.
+Install `git` and `i2c-tools` using your distro package manager.
 
 Debian / Ubuntu:
 
 ```bash
-sudo apt install i2c-tools
+sudo apt install git i2c-tools
 ```
 
 Fedora:
 
 ```bash
-sudo dnf install i2c-tools
+sudo dnf install git i2c-tools
 ```
 
 openSUSE:
 
 ```bash
-sudo zypper install i2c-tools
+sudo zypper install git i2c-tools
 ```
 
-Then follow the same setup steps from the Arch section starting at **Load the I2C device module**.
+Then follow the same setup steps from the **Quick Install: Git Clone** section starting at **Download the project from GitHub**.
+
+## If `gpu-rgb` Says “Command Not Found”
+
+The installer places the commands in:
+
+```text
+~/.local/bin
+```
+
+If your shell does not look there automatically, add it to your PATH.
+
+Fish:
+
+```fish
+fish_add_path ~/.local/bin
+```
+
+Bash / zsh:
+
+```bash
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.profile
+source ~/.profile
+```
+
+Then try again:
+
+```bash
+gpu-rgb
+```
 
 ## Usage
 
