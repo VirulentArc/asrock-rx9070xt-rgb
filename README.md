@@ -102,10 +102,10 @@ After logging back in, open a terminal and go back into the project folder you c
 
 ```bash
 cd ~/asrock-rx9070xt-rgb
-./install.sh
+bash ./install.sh
 ```
 
-The `./` means “run the `install.sh` file in this folder.”
+Using `bash ./install.sh` tells Bash to run the installer from the current folder. This works even if the file is not marked executable yet.
 
 ### 6. Make sure `~/.local/bin` is in your PATH
 
@@ -269,13 +269,13 @@ It tries to use one of these terminal emulators, in this order:
 Choose the terminal manually during install:
 
 ```bash
-TERMINAL_CMD="alacritty -e" ./install.sh
+TERMINAL_CMD="alacritty -e" bash ./install.sh
 ```
 
 Skip the desktop launcher:
 
 ```bash
-INSTALL_DESKTOP=0 ./install.sh
+INSTALL_DESKTOP=0 bash ./install.sh
 ```
 
 ## Advanced: Environment Overrides
@@ -359,7 +359,7 @@ Observed brightness values:
 From the repository folder, run:
 
 ```bash
-./uninstall.sh
+bash ./uninstall.sh
 ```
 
 This removes the installed scripts and desktop launcher.
