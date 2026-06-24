@@ -136,12 +136,12 @@ gpu-rgb
 Use this if you want to clone the repository instead of downloading a release archive.
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/asrock-rx9070xt-rgb.git
+git clone https://github.com/VirulentArc/asrock-rx9070xt-rgb.git
 cd asrock-rx9070xt-rgb
 ./install.sh
 ```
 
-Replace `YOUR_USERNAME` with the account that owns the repository.
+Replace `VirulentArc` with the account that owns the repository.
 
 If `gpu-rgb` is not found after installing, make sure `~/.local/bin` is in your PATH as shown above.
 
