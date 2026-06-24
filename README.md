@@ -62,9 +62,12 @@ sudo pacman -S git i2c-tools
 
 ### 2. Download the project from GitHub
 
+This clones the project into a folder in your home directory, then enters that folder.
+
 ```bash
+cd ~
 git clone https://github.com/VirulentArc/asrock-rx9070xt-rgb.git
-cd asrock-rx9070xt-rgb
+cd ~/asrock-rx9070xt-rgb
 ```
 
 ### 3. Load the I2C device module
@@ -95,11 +98,14 @@ You should see `i2c` somewhere in the output.
 
 ### 5. Run the installer
 
-From inside the project folder:
+After logging back in, open a terminal and go back into the project folder you cloned in step 2:
 
 ```bash
+cd ~/asrock-rx9070xt-rgb
 ./install.sh
 ```
+
+The `./` means “run the `install.sh` file in this folder.”
 
 ### 6. Make sure `~/.local/bin` is in your PATH
 
@@ -145,7 +151,7 @@ openSUSE:
 sudo zypper install git i2c-tools
 ```
 
-Then follow the same setup steps from the **Quick Install: Git Clone** section starting at **Download the project from GitHub**.
+Then follow the same setup steps from the **Quick Install: Git Clone** section, starting at **Download the project from GitHub**.
 
 ## If `gpu-rgb` Says “Command Not Found”
 
