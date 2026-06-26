@@ -129,6 +129,41 @@ gpu-rgb
 ```
 
 
+
+## Updating From Git
+
+If you installed with the Git clone method, update from the project folder and run the installer again:
+
+```bash
+cd ~/asrock-rx9070xt-rgb
+git pull --ff-only
+bash ./install.sh
+```
+
+Then run the menu again:
+
+```bash
+gpu-rgb
+```
+
+If `git pull --ff-only` stops with a message about local changes, the update did **not** happen. Check what changed:
+
+```bash
+cd ~/asrock-rx9070xt-rgb
+git status --short
+```
+
+If the listed files are not changes you intentionally want to keep, restore those files, pull again, and reinstall. For example:
+
+```bash
+cd ~/asrock-rx9070xt-rgb
+git restore bin/asrock-gpu-rgb-apply desktop/gpu-rgb.desktop
+git pull --ff-only
+bash ./install.sh
+```
+
+Do not run `bash ./install.sh` after a failed pull and assume the update was installed. If the pull failed, the installer only reinstalls the version already on your system.
+
 ## Other Linux Distros
 
 Install `git` and `i2c-tools` using your distro package manager.
