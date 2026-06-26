@@ -20,7 +20,7 @@ The tool talks directly to the GPU RGB controller over I2C.
 
 ## Current Status
 
-Version: **0.1.0**
+Version: **0.1.1**
 
 Tested on:
 
@@ -221,21 +221,22 @@ These are the modes currently exposed by the menu.
 
 | Menu Number | Mode Value | Menu Name | Color Choice | Notes |
 |---:|---:|---|---|---|
-| `1` | `0x01` | Static Color | Yes | Static color. |
-| `2` | `0x02` | Breathing | Yes | Confirmed working. |
-| `3` | `0x03` | Strobe | Yes | ASRock-style strobe/blinking effect. |
-| `4` | `0x04` | RGB Cycle | No | Uses a custom speed table because the normal slowest speed can skip red. |
-| `5` | `0x05` | Random | No | Random color changing effect. |
+| `1` | `0x01` + RGB off/black | Off Mode | No | Turns selected zones off. |
+| `2` | `0x01` | Static | Yes | Static color. |
+| `3` | `0x02` | Breathing | Yes | Confirmed working. |
+| `4` | `0x03` | Strobe | Yes | ASRock-style strobe/blinking effect. |
+| `5` | `0x04` | Cycling | No | Uses a custom speed table because the normal slowest speed can skip red. |
+| `6` | `0x05` | Random | No | Random color changing effect. |
 | — | `0x06` | Not used | No | Likely software-driven music mode; not exposed in the menu. |
-| `6` | `0x07` | Color Shift / Fade | No | Hardware animation. |
-| `7` | `0x08` | Visor / Back-And-Forth | Yes | Possibly broken on this card; may go black after each cycle. |
-| `8` | `0x09` | Stacking Light, Right To Left | Yes | Hardware animation. |
-| `9` | `0x0A` | Fill Wave, Left To Right | Yes | Hardware animation. |
-| `10` | `0x0B` | Traveling Wave, Left To Right | Yes | Hardware animation. |
-| `11` | `0x0C` | Marquee - Color Choice | Yes | Hardware animation. |
-| `12` | `0x0D` | Marquee - Random Color Shift | No | Hardware animation. |
-| `13` | `0x0E` | Color Wave | No | Hardware animation. |
+| `7` | `0x07` | Wave | No | Hardware animation. |
+| `8` | `0x08` | Spring | Yes | Hardware animation. |
+| `9` | `0x09` | Stack | Yes | Hardware animation. |
+| `10` | `0x0A` | Cram | Yes | Hardware animation. |
+| `11` | `0x0B` | Scan | Yes | Hardware animation. |
+| `12` | `0x0C` | Neon | Yes | Hardware animation. |
+| `13` | `0x0D` | Water | No | Hardware animation. |
 | `14` | `0x0F` | Rainbow | No | Hardware animation. |
+| `15` | `0x0E` | Rainbow 2 | No | Hardware animation. |
 
 ## Zone Choices
 
@@ -342,7 +343,7 @@ Observed speed values:
 | Fast | `0x40` |
 | Fastest | `0x20` |
 
-RGB Cycle uses a custom slowest value of `0xE0` because `0xFF` could skip red.
+Cycling uses a custom slowest value of `0xE0` because `0xFF` could skip red.
 
 Observed brightness values:
 

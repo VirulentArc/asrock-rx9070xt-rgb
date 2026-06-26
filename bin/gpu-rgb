@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="0.1.0"
+VERSION="0.1.1"
 APP_NAME="ASRock RX 9070 XT RGB Controller"
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
@@ -165,27 +165,28 @@ draw_main_menu() {
     ui_mid
 
     ui_row "Static" "$C_BOLD$C_GREEN"
-    ui_row "  1)  Static Color" "$C_WHITE"
+    ui_row "  1)  Off Mode" "$C_WHITE"
+    ui_row "  2)  Static" "$C_WHITE"
     ui_blank
 
     ui_row "Hardware Animation Modes" "$C_BOLD$C_MAGENTA"
-    ui_row "  2)  Breathing" "$C_WHITE"
-    ui_row "  3)  Strobe" "$C_WHITE"
-    ui_row "  4)  RGB Cycle" "$C_WHITE"
-    ui_row "  5)  Random" "$C_WHITE"
-    ui_row "  6)  Color Shift / Fade" "$C_WHITE"
-    ui_row "  7)  Visor / Back-And-Forth (Possibly Broken, Goes Black After Each Cycle)" "$C_YELLOW"
-    ui_row "  8)  Stacking Light, Right To Left" "$C_WHITE"
-    ui_row "  9)  Fill Wave, Left To Right" "$C_WHITE"
-    ui_row " 10)  Traveling Wave, Left To Right" "$C_WHITE"
-    ui_row " 11)  Marquee - Color Choice" "$C_WHITE"
-    ui_row " 12)  Marquee - Random Color Shift" "$C_WHITE"
-    ui_row " 13)  Color Wave" "$C_WHITE"
+    ui_row "  3)  Breathing" "$C_WHITE"
+    ui_row "  4)  Strobe" "$C_WHITE"
+    ui_row "  5)  Cycling" "$C_WHITE"
+    ui_row "  6)  Random" "$C_WHITE"
+    ui_row "  7)  Wave" "$C_WHITE"
+    ui_row "  8)  Spring" "$C_WHITE"
+    ui_row "  9)  Stack" "$C_WHITE"
+    ui_row " 10)  Cram" "$C_WHITE"
+    ui_row " 11)  Scan" "$C_WHITE"
+    ui_row " 12)  Neon" "$C_WHITE"
+    ui_row " 13)  Water" "$C_WHITE"
     ui_row " 14)  Rainbow" "$C_WHITE"
+    ui_row " 15)  Rainbow 2" "$C_WHITE"
     ui_blank
 
     ui_row "Info" "$C_BOLD$C_GREEN"
-    ui_row " 15)  Hardware Info" "$C_WHITE"
+    ui_row " 16)  Hardware Info" "$C_WHITE"
     ui_blank
 
     ui_row "Controls" "$C_BOLD$C_GREEN"
@@ -194,7 +195,7 @@ draw_main_menu() {
     ui_row "Tip: Hardware Modes Keep Running After This Window Closes." "$C_DIM"
     ui_bottom
 
-    printf "\n%sChoose option [0-15]: %s" "$C_BOLD$C_CYAN" "$C_RESET"
+    printf "\n%sChoose option [0-16]: %s" "$C_BOLD$C_CYAN" "$C_RESET"
 }
 
 choose_color() {
@@ -287,14 +288,14 @@ choose_speed() {
 
 choose_rgb_cycle_speed() {
     echo
-    echo "RGB Cycle Speed:"
+    echo "Cycling Speed:"
     echo "1) Slowest"
     echo "2) Slow"
     echo "3) Medium"
     echo "4) Fast"
     echo "5) Fastest"
     echo
-    echo "RGB Cycle Uses A Custom Speed Table Because The Normal Slowest Value Can Skip Red."
+    echo "Cycling Uses A Custom Speed Table Because The Normal Slowest Value Can Skip Red."
     echo
 
     read -r -p "Choose Speed [1-5, default 3]: " speed_choice
@@ -364,8 +365,20 @@ apply_rgb() {
         "$RGB_SCRIPT" "$COLOR"
 }
 
+run_off_mode() {
+    LABEL="Off Mode"
+    MODE="0x01"
+    COLOR="off"
+    SPEED_PARAM="0x80"
+    BRIGHTNESS_PARAM="0x20"
+    PARAM_C="0x00"
+
+    choose_zones || return
+    apply_rgb
+}
+
 run_static() {
-    LABEL="Static Color"
+    LABEL="Static"
     MODE="0x01"
     SPEED_PARAM="0x80"
     BRIGHTNESS_PARAM="0x80"
@@ -410,8 +423,8 @@ run_no_color_mode() {
     apply_rgb
 }
 
-run_rgb_cycle() {
-    LABEL="RGB Cycle"
+run_cycling() {
+    LABEL="Cycling"
     MODE="0x04"
     COLOR="#FFFFFF"
     SPEED_PARAM="0x80"
@@ -440,21 +453,22 @@ Known channels:
   ${DEFAULT_FAN_CHANNEL} = Fan Lighting
 
 Known menu modes:
-  0x01 = Static Color
+  Off Mode = Static command with RGB set to off/black
+  0x01 = Static
   0x02 = Breathing
   0x03 = Strobe
-  0x04 = RGB Cycle
+  0x04 = Cycling
   0x05 = Random
   0x06 = Not used; likely software-driven music mode
-  0x07 = Color Shift / Fade
-  0x08 = Visor / Back-And-Forth; may go black after each cycle
-  0x09 = Stacking Light, Right To Left
-  0x0A = Fill Wave, Left To Right
-  0x0B = Traveling Wave, Left To Right
-  0x0C = Marquee - Color Choice
-  0x0D = Marquee - Random Color Shift
-  0x0E = Color Wave
+  0x07 = Wave
+  0x08 = Spring
+  0x09 = Stack
+  0x0A = Cram
+  0x0B = Scan
+  0x0C = Neon
+  0x0D = Water
   0x0F = Rainbow
+  0x0E = Rainbow 2
 
 Safety:
   Do not test 0x10 or higher. In testing, those values could wedge the RGB controller
@@ -471,48 +485,51 @@ while true; do
 
     case "$choice" in
         1)
-            run_static
+            run_off_mode
             ;;
         2)
-            run_color_mode "Breathing" "0x02"
+            run_static
             ;;
         3)
-            run_color_mode "Strobe" "0x03"
+            run_color_mode "Breathing" "0x02"
             ;;
         4)
-            run_rgb_cycle
+            run_color_mode "Strobe" "0x03"
             ;;
         5)
-            run_no_color_mode "Random" "0x05"
+            run_cycling
             ;;
         6)
-            run_no_color_mode "Color Shift / Fade" "0x07"
+            run_no_color_mode "Random" "0x05"
             ;;
         7)
-            run_color_mode "Visor / Back-And-Forth (Possibly Broken, Goes Black After Each Cycle)" "0x08"
+            run_no_color_mode "Wave" "0x07"
             ;;
         8)
-            run_color_mode "Stacking Light, Right To Left" "0x09"
+            run_color_mode "Spring" "0x08"
             ;;
         9)
-            run_color_mode "Fill Wave, Left To Right" "0x0A"
+            run_color_mode "Stack" "0x09"
             ;;
         10)
-            run_color_mode "Traveling Wave, Left To Right" "0x0B"
+            run_color_mode "Cram" "0x0A"
             ;;
         11)
-            run_color_mode "Marquee - Color Choice" "0x0C"
+            run_color_mode "Scan" "0x0B"
             ;;
         12)
-            run_no_color_mode "Marquee - Random Color Shift" "0x0D"
+            run_color_mode "Neon" "0x0C"
             ;;
         13)
-            run_no_color_mode "Color Wave" "0x0E"
+            run_no_color_mode "Water" "0x0D"
             ;;
         14)
             run_no_color_mode "Rainbow" "0x0F"
             ;;
         15)
+            run_no_color_mode "Rainbow 2" "0x0E"
+            ;;
+        16)
             show_hardware_info
             ;;
         0|q|Q)
