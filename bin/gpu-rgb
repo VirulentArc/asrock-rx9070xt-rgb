@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="0.1.1"
+VERSION="0.1.2"
 APP_NAME="ASRock RX 9070 XT RGB Controller"
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
@@ -50,6 +50,7 @@ Environment overrides:
   GPU_RGB_FAN_CHANNEL=7
   GPU_RGB_HEADER_CHANNEL=3
   GPU_RGB_SKIP_WARNING=1
+  GPU_RGB_WRITE_DELAY=0
 
 Known channels on the tested card:
   3 = GPU ARGB header
@@ -111,7 +112,7 @@ Hardware warning:
   Do not use it on other GPUs unless you know the correct bus, address, channels, and mode values.
 
 Known safety note:
-  Mode values 0x10 and higher could wedge the RGB controller during testing.
+  Mode values 0x10 and higher could freeze the RGB controller during testing.
   The menu does not use those values.
 
 Press Enter To Continue...
@@ -471,7 +472,7 @@ Known menu modes:
   0x0E = Rainbow 2
 
 Safety:
-  Do not test 0x10 or higher. In testing, those values could wedge the RGB controller
+  Do not test 0x10 or higher. In testing, those values could freeze the RGB controller
   until a cold power cycle.
 INFO
 }

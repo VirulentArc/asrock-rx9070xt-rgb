@@ -15,12 +15,12 @@ The tool talks directly to the GPU RGB controller over I2C.
 > This tool has only been tested on the **ASRock RX 9070 XT Steel Legend**.
 > Do not use it on another GPU unless you know the correct I2C bus, address, channel numbers, and mode values.
 >
-> During testing, mode values `0x10` and higher could wedge the RGB controller until a cold power cycle.
+> During testing, mode values `0x10` and higher could freeze the RGB controller until a cold power cycle.
 > This tool does **not** use those values.
 
 ## Current Status
 
-Version: **0.1.1**
+Version: **0.1.2**
 
 Tested on:
 
@@ -328,6 +328,7 @@ GPU_RGB_MODE=0x01
 GPU_RGB_PARAM_A=0x80
 GPU_RGB_PARAM_B=0xFF
 GPU_RGB_PARAM_C=0x00
+GPU_RGB_WRITE_DELAY=0
 ```
 
 The menu also accepts:
@@ -361,6 +362,8 @@ The low-level script sends one 12-byte write per channel:
 ```text
 0x10 0x00 CHANNEL MODE R G B PARAM_A PARAM_B PARAM_C 0x1A 0x00
 ```
+
+By default, multi-zone writes are sent with no intentional delay between channels. This keeps hardware animation modes visually synchronized across zones. For troubleshooting, the old delayed behavior can be restored with `GPU_RGB_WRITE_DELAY=0.05`.
 
 On the tested controller:
 
@@ -403,6 +406,7 @@ This removes the installed scripts and desktop launcher.
 ## Notes
 
 - Hardware animation modes keep running after the menu closes.
+- Multi-zone writes use no intentional inter-channel delay so hardware effects start in sync.
 - The RGB state may persist across reboot.
 - Music mode is not implemented because it is likely software-driven.
 - This project is not affiliated with ASRock.

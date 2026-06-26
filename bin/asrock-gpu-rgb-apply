@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="0.1.1"
+VERSION="0.1.2"
 
 # Known-good defaults for the ASRock RX 9070 XT Steel Legend tested system.
 # These can be overridden with either the GPU_RGB_* names or the shorter legacy names.
@@ -13,6 +13,7 @@ MODE="${GPU_RGB_MODE:-${MODE:-0x01}}"
 PARAM_A="${GPU_RGB_PARAM_A:-${SPEED:-0x80}}"        # Param A: animation speed on this controller.
 PARAM_B="${GPU_RGB_PARAM_B:-${BRIGHTNESS:-0xFF}}"   # Param B: brightness on this controller.
 PARAM_C="${GPU_RGB_PARAM_C:-${DIRECTION:-0x00}}"
+WRITE_DELAY="${GPU_RGB_WRITE_DELAY:-${WRITE_DELAY:-0}}"
 
 usage() {
     cat <<USAGE
@@ -43,9 +44,10 @@ Optional environment variables:
   GPU_RGB_PARAM_A=0x80
   GPU_RGB_PARAM_B=0xFF
   GPU_RGB_PARAM_C=0x00
+  GPU_RGB_WRITE_DELAY=0
 
 Legacy environment variable names are also accepted:
-  BUS, ADDR, CHANNELS, MODE, BRIGHTNESS, SPEED, DIRECTION
+  BUS, ADDR, CHANNELS, MODE, BRIGHTNESS, SPEED, DIRECTION, WRITE_DELAY
 
 Examples:
   asrock-gpu-rgb-apply '#00A0FF'
@@ -55,7 +57,7 @@ Examples:
 Safety:
   This has only been tested on the ASRock RX 9070 XT Steel Legend.
   Do not use unknown modes or unknown I2C addresses.
-  In testing, mode values 0x10 and higher could wedge the RGB controller until a cold power cycle.
+  In testing, mode values 0x10 and higher could freeze the RGB controller until a cold power cycle.
 USAGE
 }
 
@@ -113,5 +115,7 @@ for CH in $CHANNELS; do
         "$MODE" "$R" "$G" "$B" \
         "$PARAM_A" "$PARAM_B" "$PARAM_C" 0x1A 0x00
 
-    sleep 0.05
+    if [[ "$WRITE_DELAY" != "0" && "$WRITE_DELAY" != "0.0" ]]; then
+        sleep "$WRITE_DELAY"
+    fi
 done
